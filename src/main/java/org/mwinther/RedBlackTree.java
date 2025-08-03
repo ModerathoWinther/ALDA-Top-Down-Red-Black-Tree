@@ -90,12 +90,7 @@ public class RedBlackTree<AnyType extends Comparable<? super AnyType>> {
     }
 
     /**
-     * Remove from the tree.
-     * <p>
-     * The current version works, but is extremely inefficient since it copies the
-     * entire content for each remove operation. Your job is to replace it with an
-     * efficient version that works on the tree directly.
-     *
+     * Remove x from the tree.
      * @param x the item to remove.
      */
     public void remove(AnyType x) {
@@ -273,6 +268,10 @@ public class RedBlackTree<AnyType extends Comparable<? super AnyType>> {
         return rightChild;
     }
 
+    /**
+     * Traverses the tree based on value of x and updates pointers.
+     * @param x x in remove
+     */
     private void traverseDownTree(AnyType x) {
         great = grand;
         grand = parent;
@@ -281,31 +280,43 @@ public class RedBlackTree<AnyType extends Comparable<? super AnyType>> {
         sibling = parent.left == current ? parent.right : parent.left;
     }
 
+    /**
+     *
+     * @param node to be evaluated.
+     * @return true if node is black or NIL.
+     */
     private boolean isDoubleBlack(RedBlackNode<AnyType> node) {
         return isBlack(node) && isBlack(node.left) && isBlack(node.right);
     }
 
+    /**
+     *
+     * @param node to be evaluated
+     * @return true if the node is black or NIL.
+     */
     private boolean isBlack(RedBlackNode<AnyType> node) {
         return node == nullNode || node.color == BLACK;
     }
 
+    /**
+     *
+     * @param node to be evaluated
+     * @return true if node is red.
+     */
     private boolean isRed(RedBlackNode<AnyType> node) {
         return !isBlack(node);
     }
 
-    private void handleSecondCase(AnyType x) {
-        traverseDownTree(x);
-        parent.color = RED;
-        sibling.color = BLACK;
-        grand = rotate(sibling.element, grand);
-        sibling = parent.right == current ? parent.left : parent.right;
-    }
-
+    /**
+     * Evaluates all subcases of case 1 and performs the appropriate action.
+     */
     private void handleFirstCase() {
         if (isDoubleBlack(sibling)) {
+            // Subcase 1A: Current and sibling is double black, perform simple color flip.
             current.color = sibling.color = RED;
             parent.color = BLACK;
         } else if (sibling != nullNode && isBlack(sibling)) {
+            // Subcases 1B and 1C: one or both of sibling's children are red. 1B handles an outer red child and 1C an inside red child.
             if (isRed(sibling.left) && isOuterChild(sibling.left)) handleOuterRedSiblingChild();
             else if (isRed(sibling.right) && isOuterChild(sibling.right)) handleOuterRedSiblingChild();
             else {
@@ -316,12 +327,32 @@ public class RedBlackTree<AnyType extends Comparable<? super AnyType>> {
         }
     }
 
+    /**
+     * Handles subcase 2B by promoting the red sibling, making it the grandparent of current and flips
+     * colors of sibling and parent.
+     * @param x x in remove.
+     */
+    private void handleSecondCase(AnyType x) {
+        traverseDownTree(x);
+        parent.color = RED;
+        sibling.color = BLACK;
+        grand = rotate(sibling.element, grand);
+        sibling = parent.right == current ? parent.left : parent.right;
+    }
+
+    /**
+     * Subcase 1B: Promotes a red outer sibling child.
+     */
     private void handleOuterRedSiblingChild() {
         grand = rotate(sibling.element, grand);
         handleRecolor();
         sibling = parent.right == current ? parent.left : parent.right;
     }
 
+    /**
+     * Subcase 1C: Promotes a red inner sibling child.
+     * @param child red sibling child identified in handleFirstSubcase
+     */
     private void handleInnerRedSiblingChild(RedBlackNode<AnyType> child) {
         sibling = rotate(child.element, parent);
         grand = rotate(sibling.element, grand);
@@ -329,11 +360,19 @@ public class RedBlackTree<AnyType extends Comparable<? super AnyType>> {
         sibling = parent.right == current ? parent.left : parent.right;
     }
 
+    /**
+     * Recolors relevant nodes for unlucky Subcase 2B
+     */
     private void handleRecolor() {
         grand.left.color = grand.right.color = BLACK;
         current.color = grand.color = RED;
     }
 
+    /**
+     * Evaluates whether the node is an outside or inside child.
+     * @param child from handleFirstCase
+     * @return true if child is an outside child.
+     */
     private boolean isOuterChild(RedBlackNode<AnyType> child) {
         // Check if parent is a left child of grand
         if (parent.left == sibling) {
@@ -342,10 +381,18 @@ public class RedBlackTree<AnyType extends Comparable<? super AnyType>> {
         } else return sibling.right == child;
     }
 
+    /**
+     * Evaluates whether the node is a leaf node.
+     * @param node to be evaluated.
+     * @return true if the node is a leaf node.
+     */
     private boolean isLeaf(RedBlackNode<AnyType> node) {
         return node != nullNode && node.left == nullNode && node.right == nullNode;
     }
 
+    /**
+     * Removes the current leaf node from its parent.
+     */
     private void removeLeaf() {
         if (compare(current.element, header.right) == 0) header.right = nullNode;
         else {
@@ -354,18 +401,33 @@ public class RedBlackTree<AnyType extends Comparable<? super AnyType>> {
         }
     }
 
+    /**
+     * Finds the successor of a node.
+     * @param node from remove
+     * @return element of the successor of node.
+     */
     private AnyType findSuccessorElement(RedBlackNode<AnyType> node) {
         RedBlackNode<AnyType> succ = node.right;
         while (succ.left != nullNode) succ = succ.left;
         return succ.element;
     }
 
+    /**
+     * Finds the in order predecessor of a node.
+     * @param node from remove
+     * @return element of the in order predecessor of node.
+     */
     private AnyType findPredecessorElement(RedBlackNode<AnyType> node) {
         RedBlackNode<AnyType> pre = node.left;
         while (pre.right != nullNode) pre = pre.right;
         return pre.element;
     }
 
+    /**
+     * Replaces the element of toRemove.
+     * @param toRemove node to be removed from remove
+     * @param element element to insert into toRemove.
+     */
     private void replaceNodeElement(RedBlackNode<AnyType> toRemove, AnyType element) {
         if (compare(element, header.right) == 0) header.right.element = element;
         else toRemove.element = element;
